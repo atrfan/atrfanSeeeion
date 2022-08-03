@@ -140,6 +140,7 @@ object GroupEventManager {
                 for (welcome in PluginData.groupWelcomeMessage) {
                     chain.append(welcome.deserializeMiraiCode())
                         .append("\n")
+                        .append("----------------------\n")
                 }
                 event.subject.sendMessage(chain.build())
             }
