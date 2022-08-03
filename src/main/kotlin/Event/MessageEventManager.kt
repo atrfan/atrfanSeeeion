@@ -18,9 +18,6 @@ import java.util.*
 import java.util.regex.Pattern
 
 object MessageEventManager {
-
-    lateinit var base: GroupProhibitBase
-
     suspend fun replySpecific(event: MessageEvent) {
         val message = event.message.contentToString()
         val file = File("data.json")
@@ -43,10 +40,10 @@ object MessageEventManager {
      *
      * 添加违禁词，格式为：+prohibit: 违禁词 禁言时间
      */
-    suspend fun addGroupProhibit(event: MessageEvent) {
+    suspend fun addGroupProhibit(event: MessageEvent): Boolean {
         val content = event.message.contentToString()
-        if (!Pattern.matches("\\+prohibit[:：](\\S)+ (\\d)+\\S", content)) {
-            return
+        if (!Pattern.matches("\\+prohibit[:：]\\s(\\S)+\\s(\\d)+\\S", content)) {
+            return false
         }
         val str = content.split(" ".toRegex()).toTypedArray()
 
@@ -81,39 +78,43 @@ object MessageEventManager {
         event.subject.sendMessage(
             PluginData.operateGroupProhibitMessage(true, base)
         )
+        return true
     }
 
     /**
      *
-     * 删除违禁词，格式：-prohibit：违禁词
+     * 删除违禁词，格式：-prohibit： 违禁词
      */
-    suspend fun deleteGroupProhibit(event: MessageEvent) {
+    suspend fun deleteGroupProhibit(event: MessageEvent): Boolean {
         val input = event.message.contentToString()
-        if (!Pattern.matches("-prohibit[:：](\\S)+", input)) {
-            return
+        if (!Pattern.matches("-prohibit[:：]\\s(\\S)+", input)) {
+            return false
         }
-        val str = input.split("[:：]".toRegex()).toTypedArray()
+        val str = input.split(" ".toRegex()).toTypedArray()
         val content = str[1]
 
         val base = GroupProhibitBase(content, null, null, 0)
         event.subject.sendMessage(
             PluginData.operateGroupProhibitMessage(false, base)
         )
+        return true
     }
 
     /**
      *
      * 查询违禁词，格式：让我康康违禁词
      */
-    suspend fun queryGroupProhibit(event: MessageEvent) {
+    suspend fun queryGroupProhibit(event: MessageEvent): Boolean {
         if (event.message.contentToString() != "让我康康违禁词") {
-            return
+            return false
         }
         val message = MessageChainBuilder().append("下列为所有违禁词：\n").append("违禁词\t禁言时间\t\n")
-        for ((_, base) in PluginData.groupProhibitMessage) {
-            message.append("${base.content}\t${base.description}\n")
+        for ((_, value) in PluginData.groupProhibitMessage) {
+            val jsonObject = JSONObject(value)
+            message.append("${jsonObject["content"]}\t${jsonObject["description"]}\n")
         }
         event.subject.sendMessage(message.build())
+        return true
     }
 
     /**
@@ -125,25 +126,29 @@ object MessageEventManager {
         val qq = event.sender.id
         val member = event.bot.getGroup(event.subject.id)!![qq]!!
         val content = event.message.contentToString()
-        for((key,value) in PluginData.groupProhibitMessage){
-            if(content.contains(key)){
+        var base = ""
+        for ((key, value) in PluginData.groupProhibitMessage) {
+            if (content.contains(key)) {
                 base = value
             }
         }
+        if (base == "") return
         try {
-            member.mute(base.prohibitNum)       // 禁言
+            val time = JSONObject(base)["prohibitNum"].toString().toInt()
+            member.mute(time)       // 禁言
             //撤回
             event.source.recall()
         } catch (e: Exception) {
             if (e is PermissionDeniedException) {
-                event.subject.sendMessage("Σ(っ °Д °;)っ,咱好像没有权限撤回那条消息欸")
+                event.subject.sendMessage("Σ(っ °Д °;)っ,咱好像没有权限撤回那条消息并禁言ta欸")
+                return
             } else {
                 e.printStackTrace()
             }
             event.subject.sendMessage(
                 buildMessageChain {
                     +At(event.sender.id)
-                    +PlainText(base.reply + base.description)
+                    +PlainText(JSONObject(base)["reply"].toString() + JSONObject(base)["description"])
                 }
             )
         }

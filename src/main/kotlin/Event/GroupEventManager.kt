@@ -89,8 +89,10 @@ object GroupEventManager {
         } catch (e: Exception) {
             if (e is PermissionDeniedException) {
                 subject.sendMessage("禁言失败,ATRI没有权力禁言ta欸")
+                return
             } else {
                 e.printStackTrace()
+                return
             }
         }
         subject.sendMessage(messages.build())

@@ -7,6 +7,7 @@ import net.mamoe.mirai.console.data.value
 import net.mamoe.mirai.message.data.MessageChain
 import net.mamoe.mirai.message.data.PlainText
 import net.mamoe.mirai.message.data.buildMessageChain
+import org.json.JSONObject
 
 object PluginData : AutoSavePluginData("atrfanSessionData") {
 
@@ -17,11 +18,11 @@ object PluginData : AutoSavePluginData("atrfanSessionData") {
     var master: Long by value(1311489434L)
 
     @ValueDescription("群禁言词汇")
-    val groupProhibitMessage: MutableMap<String, GroupProhibitBase> by value()
+    val groupProhibitMessage: MutableMap<String, String> by value()
 
     fun operateGroupProhibitMessage(aod: Boolean, base: GroupProhibitBase): MessageChain {
         return if (aod) {
-            groupProhibitMessage[base.content] = base
+            groupProhibitMessage[base.content] = JSONObject(base).toString()
             buildMessageChain { +PlainText("${base.content} 禁言词添加成功") }
         } else {
             if (!groupProhibitMessage.contains(base.content)) {

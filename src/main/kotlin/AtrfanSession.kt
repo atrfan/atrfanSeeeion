@@ -32,10 +32,12 @@ object AtrfanSession : KotlinPlugin(
         }
 
         GlobalEventChannel.subscribeAlways<MessageEvent> {
-            MessageEventManager.replySpecific(this)                 // 特定消息回复
-            MessageEventManager.addGroupProhibit(this)              // 违禁词添加
-            MessageEventManager.deleteGroupProhibit(this)           // 违禁词删除
-            MessageEventManager.muteGroupContact(this)              // 违禁词禁言
+
+            var flag = MessageEventManager.queryGroupProhibit(this)                     // 违禁词查询
+            if (!flag) flag = MessageEventManager.deleteGroupProhibit(this)             // 违禁词删除
+            if (!flag) flag = MessageEventManager.addGroupProhibit(this)                // 违禁词添加
+            if (!flag) MessageEventManager.muteGroupContact(this)                       // 违禁词禁言
+            if (!flag) MessageEventManager.replySpecific(this)                          // 特定消息回复
         }
     }
 

@@ -1,5 +1,7 @@
 package com.github.entity
 
+import kotlinx.serialization.json.JsonNames
+
 /**
  *
  * 群禁言词汇信息
