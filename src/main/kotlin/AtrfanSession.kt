@@ -21,16 +21,21 @@ object AtrfanSession : KotlinPlugin(
     override fun onEnable() {
         logger.info { "Plugin loaded" }
 
+        // 新人入群欢迎
         GlobalEventChannel.subscribeAlways<MemberJoinEvent> {
             GroupEventManager.welcomeNewMember(this)
         }
+
         GlobalEventChannel.subscribeAlways<GroupMessageEvent> {
-            GroupEventManager.prohibit(this)
-            GroupEventManager.setGroupWelcomeManager(this)
+            GroupEventManager.prohibit(this)                  // 快速禁言
+            GroupEventManager.setGroupWelcomeManager(this)          // 设置入群欢迎
         }
 
         GlobalEventChannel.subscribeAlways<MessageEvent> {
-            MessageEventManager.replySpecific(this)
+            MessageEventManager.replySpecific(this)                 // 特定消息回复
+            MessageEventManager.addGroupProhibit(this)              // 违禁词添加
+            MessageEventManager.deleteGroupProhibit(this)           // 违禁词删除
+            MessageEventManager.muteGroupContact(this)              // 违禁词禁言
         }
     }
 
