@@ -1,6 +1,7 @@
 package com.github
 
 import com.github.Event.*
+import com.github.Timming.TimerManager
 import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescription
 import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
 import net.mamoe.mirai.event.GlobalEventChannel
@@ -20,6 +21,10 @@ object AtrfanSession : KotlinPlugin(
 ) {
     override fun onEnable() {
         logger.info { "Plugin loaded" }
+
+        // 定时器时间
+        TimerManager.Morning()      // 早上的问候
+        TimerManager.Evening()      // 晚上的问候
 
         // 新人入群欢迎
         GlobalEventChannel.subscribeAlways<MemberJoinEvent> {

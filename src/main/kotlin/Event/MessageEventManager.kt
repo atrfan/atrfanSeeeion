@@ -4,13 +4,11 @@ import com.github.Data.PluginData
 import com.github.entity.GroupProhibitBase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.contact.PermissionDeniedException
 import net.mamoe.mirai.event.events.MessageEvent
-import net.mamoe.mirai.message.data.At
-import net.mamoe.mirai.message.data.MessageChainBuilder
+import net.mamoe.mirai.message.data.*
 import net.mamoe.mirai.message.data.MessageSource.Key.recall
-import net.mamoe.mirai.message.data.PlainText
-import net.mamoe.mirai.message.data.buildMessageChain
 import org.json.JSONObject
 import java.io.File
 import java.nio.charset.Charset
@@ -153,4 +151,28 @@ object MessageEventManager {
             )
         }
     }
+
+    /**
+     *
+     * 早、晚安问候群聊添加或删除,
+     * 只有master能使用
+     */
+    suspend fun modifyGreetGroup(event: MessageEvent) {
+        val qq = event.sender.id
+        val content = event.message.contentToString()
+        if (qq != PluginData.master || !Pattern.matches("[+-]g[me][:：]\\s[\\d]+", content)) {
+            return
+        }
+        val input = content.split("[:：]\\s".toRegex()).toTypedArray()
+        val group = input[1].toLong()
+        val bot = event.subject.bot
+        if (!PluginData.groupData.containsKey(group)) PluginData.loadGroupData(bot)
+        if (PluginData.groupData.containsKey(group)) {
+            val message = PluginData.operateGreetGroup(input[0][0] == '+',input[0][0] == 'm',qq)
+            event.subject.sendMessage(message)
+        } else {
+            event.subject.sendMessage("没有找到这个群欸，要不要确定群号后再来试一下呢?")
+        }
+    }
+    
 }
