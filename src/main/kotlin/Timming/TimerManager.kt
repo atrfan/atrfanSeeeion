@@ -32,8 +32,8 @@ object TimerManager {
 
      fun Evening() {
         val cal = Calendar.getInstance()
-        cal[Calendar.HOUR_OF_DAY] = 10
-        cal[Calendar.MINUTE] = 30
+        cal[Calendar.HOUR_OF_DAY] = 22
+        cal[Calendar.MINUTE] = 0
         cal[Calendar.SECOND] = 0
         var date = cal.time //第一次执行定时任务的时间   每天早上7点30
         //此时要在 第一次执行定时任务的时间 加一天，以便此任务在下个时间点执行。如果不加一天，任务会立即执行。
@@ -51,8 +51,14 @@ object TimerManager {
 
     suspend fun sendGreetMessage(message: String) {
         val bot = Bot.getInstance(PluginData.bot)
-        for (group in PluginData.goodMorningGroup) {
-            bot.getGroup(group)?.sendMessage(message)
+        if(message == morning) {
+            for (group in PluginData.goodMorningGroup) {
+                bot.getGroup(group)?.sendMessage(message)
+            }
+        } else {
+            for (group in PluginData.goodEveningGroup) {
+                bot.getGroup(group)?.sendMessage(message)
+            }
         }
     }
 

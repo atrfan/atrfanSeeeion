@@ -9,6 +9,7 @@ import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.event.events.MemberJoinEvent
 import net.mamoe.mirai.event.events.MessageEvent
 import net.mamoe.mirai.utils.info
+import java.util.*
 
 object AtrfanSession : KotlinPlugin(
     JvmPluginDescription(
@@ -22,10 +23,6 @@ object AtrfanSession : KotlinPlugin(
     override fun onEnable() {
         logger.info { "Plugin loaded" }
 
-        // 定时器时间
-        TimerManager.Morning()      // 早上的问候
-        TimerManager.Evening()      // 晚上的问候
-
         // 新人入群欢迎
         GlobalEventChannel.subscribeAlways<MemberJoinEvent> {
             GroupEventManager.welcomeNewMember(this)
@@ -37,13 +34,17 @@ object AtrfanSession : KotlinPlugin(
         }
 
         GlobalEventChannel.subscribeAlways<MessageEvent> {
-
             var flag = MessageEventManager.queryGroupProhibit(this)                     // 违禁词查询
             if (!flag) flag = MessageEventManager.deleteGroupProhibit(this)             // 违禁词删除
             if (!flag) flag = MessageEventManager.addGroupProhibit(this)                // 违禁词添加
             if (!flag) MessageEventManager.muteGroupContact(this)                       // 违禁词禁言
             if (!flag) MessageEventManager.replySpecific(this)                          // 特定消息回复
+            MessageEventManager.modifyGreetGroup(this)
         }
+
+        // 定时器时间
+        TimerManager.Morning()      // 早上的问候
+        TimerManager.Evening()      // 晚上的问候
     }
 
     override fun onDisable() {

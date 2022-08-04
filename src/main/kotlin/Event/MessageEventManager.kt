@@ -166,13 +166,15 @@ object MessageEventManager {
         val input = content.split("[:：]\\s".toRegex()).toTypedArray()
         val group = input[1].toLong()
         val bot = event.subject.bot
-        if (!PluginData.groupData.containsKey(group)) PluginData.loadGroupData(bot)
+        if (!PluginData.groupData.containsKey(group)) {
+            PluginData.loadGroupData(bot)
+        }
         if (PluginData.groupData.containsKey(group)) {
-            val message = PluginData.operateGreetGroup(input[0][0] == '+',input[0][0] == 'm',qq)
+            val message = PluginData.operateGreetGroup(input[0][0] == '+',input[0][0] == 'm',group)
             event.subject.sendMessage(message)
         } else {
             event.subject.sendMessage("没有找到这个群欸，要不要确定群号后再来试一下呢?")
         }
     }
-    
+
 }
