@@ -1,35 +1,56 @@
 package com.github.Event
 
+import com.alibaba.fastjson.JSON
 import com.github.Data.PluginData
 import com.github.entity.GroupProhibitBase
+import com.github.entity.SessionBase
+import io.ktor.utils.io.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.contact.PermissionDeniedException
 import net.mamoe.mirai.event.events.MessageEvent
+import net.mamoe.mirai.message.code.MiraiCode.deserializeMiraiCode
 import net.mamoe.mirai.message.data.*
 import net.mamoe.mirai.message.data.MessageSource.Key.recall
+import org.json.JSONException
 import org.json.JSONObject
 import java.io.File
+import java.lang.IllegalArgumentException
 import java.nio.charset.Charset
 import java.util.*
 import java.util.regex.Pattern
+import kotlin.collections.ArrayList
 
 object MessageEventManager {
     suspend fun replySpecific(event: MessageEvent) {
-        val message = event.message.contentToString()
+        val message = event.message.serializeToMiraiCode()
         val file = File("data.json")
         val stream = file.inputStream()
         val content = stream.readBytes().toString(Charset.defaultCharset())
         val obj = JSONObject(content)
         try {
             val array = obj.getJSONArray(message)
-            val index = (Random().nextInt(array.length()))
-            event.subject.sendMessage(array.get(index).toString())
+            val arraylist = ArrayList<String>()
+            for (value in array) {
+                arraylist.add(value.toString())
+                val base = SessionBase("精确", message, arraylist, message)
+                val chain = PluginData.operateSpecReply(true, base)
+                arraylist.remove(value.toString())
+                if (chain == buildMessageChain { +PlainText("ATRI可是高性能机器人，不需要再次学习已经会的东西哦") }) break
+            }
         } catch (ignore: Exception) {
+
         } finally {
             withContext(Dispatchers.IO) {
                 stream.close()
+            }
+        }
+        for ((key, value) in PluginData.specReply) {
+            if (Pattern.matches(key, message)) {
+                val base = JSON.parseObject(value, SessionBase::class.java)
+                val index = Random().nextInt(base.values.size)
+                event.subject.sendMessage(base.values[index].deserializeMiraiCode())
             }
         }
     }
@@ -156,11 +177,12 @@ object MessageEventManager {
      *
      * 早、晚安问候群聊添加或删除,
      * 只有master能使用
+     * 指令：【+-】greet:[空格] 群号
      */
     suspend fun modifyGreetGroup(event: MessageEvent) {
         val qq = event.sender.id
         val content = event.message.contentToString()
-        if (qq != PluginData.master || !Pattern.matches("[+-]g[me][:：]\\s[\\d]+", content)) {
+        if (qq != PluginData.master || !Pattern.matches("[+-]greet[:：]\\s[\\d]+", content)) {
             return
         }
         val input = content.split("[:：]\\s".toRegex()).toTypedArray()
@@ -170,11 +192,92 @@ object MessageEventManager {
             PluginData.loadGroupData(bot)
         }
         if (PluginData.groupData.containsKey(group)) {
-            val message = PluginData.operateGreetGroup(input[0][0] == '+',input[0][0] == 'm',group)
+            val message = PluginData.operateGreetGroup(input[0][0] == '+', group)
             event.subject.sendMessage(message)
         } else {
             event.subject.sendMessage("没有找到这个群欸，要不要确定群号后再来试一下呢?")
         }
     }
 
+
+    /**
+     * 特定内容学习
+     * 指令：[学习|遗忘] [ 匹配规则 ] 触发内容 回复内容
+     *
+     */
+    suspend fun operateStudy(event: MessageEvent) {
+        val content = event.message.serializeToMiraiCode()
+        if (!Pattern.matches("(学习|遗忘) (精确|模糊|头部|尾部) \\S+ \\S+", content) || event.sender.id != PluginData.master) {
+            return
+        }
+        val input = content.split(" ".toRegex()).toTypedArray()
+        val type = input[1]
+        val key = input[2]
+        val value = ArrayList<String>()
+        value.add(input[3])
+        var regStr = ""
+        when (type) {
+            "模糊" -> {
+                regStr = ".*?$key.*?"
+            }
+            "精确" -> {
+                regStr = key
+            }
+            "头部" -> {
+                regStr = "$key.*?"
+            }
+            "尾部" -> {
+                regStr = ".*?$key"
+            }
+        }
+        val base = SessionBase(type, key, value, regStr)
+        val message = try {
+            PluginData.operateSpecReply(input[0] == "学习", base)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            buildMessageChain { +PlainText("记忆功能出现了一点点的问题，暂时不能提供服务了，请帮忙联系我的master进行维修") }
+        }
+        event.subject.sendMessage(message)
+    }
+
+    /**
+     *
+     * 查看目前学会的所有信息
+     * 命令：查看记忆
+     */
+    suspend fun showStudy(event: MessageEvent) {
+        val content = event.message.contentToString()
+        if (content != "查看记忆") {
+            return
+        }
+        if (event.sender.id != PluginData.master) {
+            event.subject.sendMessage("哼~ 才不会让你知道我学会了多少知识呢，这可是只有master能知道的秘密")
+            return
+        }
+
+        val message = MessageChainBuilder()
+        for ((_, value) in PluginData.specReply) {
+            val base = JSON.parseObject(value, SessionBase::class.java)
+            message.append("匹配规则：${base.type}\n")
+                .append("触发词条：")
+                .append(base.key.deserializeMiraiCode())
+                .append("\n")
+                .append("回复内容：\n")
+            for (reply in base.values) {
+                message.append("\t")
+                    .append(reply.deserializeMiraiCode())
+                    .append("\n")
+            }
+            message.append("---------------------\n")
+        }
+        try {
+            event.subject.sendMessage(message.build())
+        } catch (e: Exception) {
+            if (e is IllegalArgumentException) {
+                event.subject.sendMessage("ATRI目前啥都不会哦，请添加后再来查询吧~")
+            } else {
+                e.printStackTrace()
+            }
+        }
+    }
 }

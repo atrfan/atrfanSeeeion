@@ -11,7 +11,7 @@ object TimerManager {
 
     const val evening = "晚安啦米纳斯，早点休息别再熬夜啦"
 
-     fun Morning() {
+    fun Morning() {
         val cal = Calendar.getInstance()
         cal[Calendar.HOUR_OF_DAY] = 7
         cal[Calendar.MINUTE] = 30
@@ -24,13 +24,13 @@ object TimerManager {
         //0替换成cal.getTime();
         val timer = Timer()
         timer.schedule(object : TimerTask() {
-            override fun run()=runBlocking{
+            override fun run() = runBlocking {
                 sendGreetMessage(morning)
             }
         }, date, 1000 * 60 * 60 * 24L)
     }
 
-     fun Evening() {
+    fun Evening() {
         val cal = Calendar.getInstance()
         cal[Calendar.HOUR_OF_DAY] = 22
         cal[Calendar.MINUTE] = 0
@@ -43,7 +43,7 @@ object TimerManager {
         //0替换成cal.getTime();
         val timer = Timer()
         timer.schedule(object : TimerTask() {
-            override fun run() = runBlocking{
+            override fun run() = runBlocking {
                 sendGreetMessage(evening)
             }
         }, date, 1000 * 60 * 60 * 24L)
@@ -51,14 +51,8 @@ object TimerManager {
 
     suspend fun sendGreetMessage(message: String) {
         val bot = Bot.getInstance(PluginData.bot)
-        if(message == morning) {
-            for (group in PluginData.goodMorningGroup) {
-                bot.getGroup(group)?.sendMessage(message)
-            }
-        } else {
-            for (group in PluginData.goodEveningGroup) {
-                bot.getGroup(group)?.sendMessage(message)
-            }
+        for (group in PluginData.greetGroup) {
+            bot.getGroup(group)?.sendMessage(message)
         }
     }
 

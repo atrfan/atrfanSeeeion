@@ -40,6 +40,8 @@ object AtrfanSession : KotlinPlugin(
             if (!flag) MessageEventManager.muteGroupContact(this)                       // 违禁词禁言
             if (!flag) MessageEventManager.replySpecific(this)                          // 特定消息回复
             MessageEventManager.modifyGreetGroup(this)
+            MessageEventManager.operateStudy(this)                                      // 学习功能
+            MessageEventManager.showStudy(this)                                         // 查看记忆
         }
 
         // 定时器时间

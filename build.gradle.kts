@@ -16,5 +16,6 @@ repositories {
 
 dependencies {
     implementation ("org.json:json:20220320")
+    implementation("com.alibaba:fastjson:2.0.10.graal")
 }
 
