@@ -3,6 +3,7 @@ package com.github.Timming
 import com.github.Data.PluginData
 import kotlinx.coroutines.runBlocking
 import net.mamoe.mirai.Bot
+import net.mamoe.mirai.message.code.MiraiCode.deserializeMiraiCode
 import java.util.*
 
 object TimerManager {
@@ -52,7 +53,7 @@ object TimerManager {
     suspend fun sendGreetMessage(message: String) {
         val bot = Bot.getInstance(PluginData.bot)
         for (group in PluginData.greetGroup) {
-            bot.getGroup(group)?.sendMessage(message)
+            bot.getGroup(group)?.sendMessage(message.deserializeMiraiCode())
         }
     }
 

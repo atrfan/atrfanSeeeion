@@ -17,7 +17,7 @@ object PluginData : AutoSavePluginData("atrfanSessionData") {
     var master: Long by value(1311489434L)
 
     @ValueDescription("机器人QQ")
-    val bot: Long by value(1832557686L)
+    var bot: Long by value(1832557686L)
 
     @ValueDescription("群欢迎词")
     val groupWelcomeMessage: MutableList<String> by value()
@@ -33,6 +33,9 @@ object PluginData : AutoSavePluginData("atrfanSessionData") {
 
     @ValueDescription("bot拥有的群列表")
     val groupData: MutableMap<Long, String> by value()
+
+    @ValueDescription("黑名单")
+    val blacklist: MutableList<Long> by value()
 
     fun operateGroupProhibitMessage(aod: Boolean, base: GroupProhibitBase): MessageChain {
         return if (aod) {
@@ -114,6 +117,32 @@ object PluginData : AutoSavePluginData("atrfanSessionData") {
         for (group in groups) {
             if (!groupData.containsKey(group.id)) {
                 groupData[group.id] = group.name
+            }
+        }
+    }
+
+    fun addBlacklist(qq: Long): MessageChain{
+        return if(blacklist.contains(qq)){
+            buildMessageChain {
+                +PlainText("这个人已经在黑名单中了，ATRI已经不会再理ta了，请放心吧(｡･ω･｡)")
+            }
+        } else{
+            blacklist.add(qq)
+            buildMessageChain {
+                +PlainText("成功把这个人加入黑名单了哦✧(≖ ◡ ≖✿)")
+            }
+        }
+    }
+
+    fun deleteBlacklist(qq: Long): MessageChain{
+        return if(blacklist.contains(qq)){
+            blacklist.remove(qq)
+            buildMessageChain {
+                +PlainText("成功的把ta从黑名单中移除了哦")
+            }
+        } else {
+            buildMessageChain {
+                +PlainText("这个人不在黑名单中哦，我可是高性能的，不会记错的哦。QAQ")
             }
         }
     }

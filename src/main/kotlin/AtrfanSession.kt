@@ -28,10 +28,14 @@ object AtrfanSession : KotlinPlugin(
             GroupEventManager.welcomeNewMember(this)
         }
 
+        logger.info("入群欢迎已开启")
+
         GlobalEventChannel.subscribeAlways<GroupMessageEvent> {
             GroupEventManager.prohibit(this)                  // 快速禁言
             GroupEventManager.setGroupWelcomeManager(this)          // 设置入群欢迎
         }
+
+        logger.info("群相关会话已开启")
 
         GlobalEventChannel.subscribeAlways<MessageEvent> {
             var flag = MessageEventManager.queryGroupProhibit(this)                     // 违禁词查询
@@ -42,11 +46,16 @@ object AtrfanSession : KotlinPlugin(
             MessageEventManager.modifyGreetGroup(this)
             MessageEventManager.operateStudy(this)                                      // 学习功能
             MessageEventManager.showStudy(this)                                         // 查看记忆
+            MessageEventManager.operateBlacklist(this)                                  // 黑名单相关操作
         }
+
+        logger.info("会话监听已准备完毕")
 
         // 定时器时间
         TimerManager.Morning()      // 早上的问候
         TimerManager.Evening()      // 晚上的问候
+
+        logger.info("定时器已准备完毕")
     }
 
     override fun onDisable() {

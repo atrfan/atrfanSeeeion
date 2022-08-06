@@ -7,13 +7,11 @@ import com.github.entity.SessionBase
 import io.ktor.utils.io.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.contact.PermissionDeniedException
 import net.mamoe.mirai.event.events.MessageEvent
 import net.mamoe.mirai.message.code.MiraiCode.deserializeMiraiCode
 import net.mamoe.mirai.message.data.*
 import net.mamoe.mirai.message.data.MessageSource.Key.recall
-import org.json.JSONException
 import org.json.JSONObject
 import java.io.File
 import java.lang.IllegalArgumentException
@@ -64,6 +62,11 @@ object MessageEventManager {
         if (!Pattern.matches("\\+prohibit[:：]\\s(\\S)+\\s(\\d)+\\S", content)) {
             return false
         }
+
+        if (event.sender.id != PluginData.master) {
+            event.subject.sendMessage("你没有权力进行此操作！")
+            return true
+        }
         val str = content.split(" ".toRegex()).toTypedArray()
 
         val unit = str[2].substring(str[2].length - 1)
@@ -108,6 +111,10 @@ object MessageEventManager {
         val input = event.message.contentToString()
         if (!Pattern.matches("-prohibit[:：]\\s(\\S)+", input)) {
             return false
+        }
+        if (event.sender.id != PluginData.master) {
+            event.subject.sendMessage("你没有权力进行此操作！")
+            return true
         }
         val str = input.split(" ".toRegex()).toTypedArray()
         val content = str[1]
@@ -279,5 +286,38 @@ object MessageEventManager {
                 e.printStackTrace()
             }
         }
+    }
+
+    /**
+     *
+     * 黑名单相关操作
+     */
+    suspend fun operateBlacklist(event: MessageEvent) {
+        val content = event.message.contentToString()
+        if (event.sender.id != PluginData.master || !Pattern.matches("[+-]?黑名单([:：]\\d+)?", content)) {
+            return
+        }
+        val input = content.split("[:：]".toRegex()).toTypedArray()
+        val message: MessageChain
+        if (input[0][0] == '+') {
+            message = PluginData.addBlacklist(input[1].toLong())
+        } else if (input[0][0] == '-') {
+            message = PluginData.deleteBlacklist(input[1].toLong())
+        } else {
+            message = if (PluginData.blacklist.size == 0) {
+                buildMessageChain {
+                    +PlainText("暂时没有人在ATRI的小黑屋中哦")
+                }
+            } else {
+                val mid = MessageChainBuilder()
+                mid.append("小黑屋中的有这些人哦：\n")
+                PluginData.blacklist.forEach {
+                    mid.append(it.toString())
+                    mid.append("\n")
+                }
+                mid.build()
+            }
+        }
+        event.subject.sendMessage(message)
     }
 }
