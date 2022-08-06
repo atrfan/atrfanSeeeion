@@ -1,7 +1,11 @@
 package com.github
 
+import com.github.Command.CommandManager
+import com.github.Data.PluginData
 import com.github.Event.*
 import com.github.Timming.TimerManager
+import net.mamoe.mirai.console.command.CommandManager.INSTANCE.register
+import net.mamoe.mirai.console.command.CommandManager.INSTANCE.unregister
 import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescription
 import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
 import net.mamoe.mirai.event.GlobalEventChannel
@@ -21,7 +25,19 @@ object AtrfanSession : KotlinPlugin(
     }
 ) {
     override fun onEnable() {
-        logger.info { "Plugin loaded" }
+        logger.info { "atrfanSession loaded" }
+
+        PluginData.reload()
+        logger.info("数据加载完毕")
+
+        if(PluginData.path == "") logger.warning("回复数据来源未指定，请设置相应数据")
+        else logger.info("回复数据文件为${PluginData.path}")
+
+        CommandManager.trusted
+        CommandManager.register()
+        logger.info("指令相关部分已加载完毕")
+
+
 
         // 新人入群欢迎
         GlobalEventChannel.subscribeAlways<MemberJoinEvent> {
@@ -31,6 +47,7 @@ object AtrfanSession : KotlinPlugin(
         logger.info("入群欢迎已开启")
 
         GlobalEventChannel.subscribeAlways<GroupMessageEvent> {
+            GroupEventManager.muteGroupContact(this)                       // 违禁词禁言
             GroupEventManager.prohibit(this)                  // 快速禁言
             GroupEventManager.setGroupWelcomeManager(this)          // 设置入群欢迎
         }
@@ -41,7 +58,6 @@ object AtrfanSession : KotlinPlugin(
             var flag = MessageEventManager.queryGroupProhibit(this)                     // 违禁词查询
             if (!flag) flag = MessageEventManager.deleteGroupProhibit(this)             // 违禁词删除
             if (!flag) flag = MessageEventManager.addGroupProhibit(this)                // 违禁词添加
-            if (!flag) MessageEventManager.muteGroupContact(this)                       // 违禁词禁言
             if (!flag) MessageEventManager.replySpecific(this)                          // 特定消息回复
             MessageEventManager.modifyGreetGroup(this)
             MessageEventManager.operateStudy(this)                                      // 学习功能
@@ -59,6 +75,7 @@ object AtrfanSession : KotlinPlugin(
     }
 
     override fun onDisable() {
-        logger.info("插件已被卸载，感谢使用")
+        CommandManager.unregister()
+        logger.info("atrfanSession已被卸载，感谢使用")
     }
 }

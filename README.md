@@ -94,3 +94,10 @@ welcome:
 -黑名单：qq         -> 将此qq从黑名单中删除
 
 黑名单             -> 查看黑名单中的qq
+
+## 其他指令
+* 设置回复数据初始来源      ->        /session path 文件路径
+* 设置机器人主人           ->        /session master qq
+* 设置机器人              ->        /session bot qq 
+* 测试指令                ->        /session 啊吧
+

@@ -8,6 +8,7 @@ import io.ktor.utils.io.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import net.mamoe.mirai.contact.PermissionDeniedException
+import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.event.events.MessageEvent
 import net.mamoe.mirai.message.code.MiraiCode.deserializeMiraiCode
 import net.mamoe.mirai.message.data.*
@@ -23,7 +24,7 @@ import kotlin.collections.ArrayList
 object MessageEventManager {
     suspend fun replySpecific(event: MessageEvent) {
         val message = event.message.serializeToMiraiCode()
-        val file = File("data.json")
+        val file = File(PluginData.path)
         val stream = file.inputStream()
         val content = stream.readBytes().toString(Charset.defaultCharset())
         val obj = JSONObject(content)
@@ -143,42 +144,6 @@ object MessageEventManager {
         return true
     }
 
-    /**
-     *
-     * 违禁词禁言
-     */
-
-    suspend fun muteGroupContact(event: MessageEvent) {
-        val qq = event.sender.id
-        val member = event.bot.getGroup(event.subject.id)!![qq]!!
-        val content = event.message.contentToString()
-        var base = ""
-        for ((key, value) in PluginData.groupProhibitMessage) {
-            if (content.contains(key)) {
-                base = value
-            }
-        }
-        if (base == "") return
-        try {
-            val time = JSONObject(base)["prohibitNum"].toString().toInt()
-            member.mute(time)       // 禁言
-            //撤回
-            event.source.recall()
-        } catch (e: Exception) {
-            if (e is PermissionDeniedException) {
-                event.subject.sendMessage("Σ(っ °Д °;)っ,咱好像没有权限撤回那条消息并禁言ta欸")
-                return
-            } else {
-                e.printStackTrace()
-            }
-            event.subject.sendMessage(
-                buildMessageChain {
-                    +At(event.sender.id)
-                    +PlainText(JSONObject(base)["reply"].toString() + JSONObject(base)["description"])
-                }
-            )
-        }
-    }
 
     /**
      *

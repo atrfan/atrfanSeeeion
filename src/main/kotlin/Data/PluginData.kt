@@ -37,6 +37,9 @@ object PluginData : AutoSavePluginData("atrfanSessionData") {
     @ValueDescription("黑名单")
     val blacklist: MutableList<Long> by value()
 
+    @ValueDescription("特定回复数据来源")
+    var path: String by value("")
+
     fun operateGroupProhibitMessage(aod: Boolean, base: GroupProhibitBase): MessageChain {
         return if (aod) {
             if (groupProhibitMessage.contains(base.content)) {
