@@ -27,7 +27,6 @@ object MessageEventManager {
 
         // 正则表达式转义
         val message = mid.replace("-", "_")
-        event.subject.sendMessage(message)
         val file = File(PluginData.path)
         val stream = file.inputStream()
         val content = stream.readBytes().toString(Charset.defaultCharset())
@@ -216,7 +215,6 @@ object MessageEventManager {
         regStr = regStr.replace("-", "_")
 
         val base = SessionBase(type, key, value, regStr)
-        event.subject.sendMessage("regStr = $regStr")
         val message = try {
             PluginData.operateSpecReply(input[0] == "学习", base)
         } catch (e: Exception) {

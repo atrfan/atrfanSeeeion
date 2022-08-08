@@ -30,8 +30,6 @@ object AtrfanSession : KotlinPlugin(
         PluginData.reload()
         logger.info("数据加载完毕")
 
-        PluginData.specReply.clear()
-
         if (PluginData.path == "data.json") logger.warning("回复数据来源未指定，请设置相应数据")
         else logger.info("回复数据文件为${PluginData.path}")
 
