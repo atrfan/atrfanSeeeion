@@ -22,8 +22,12 @@ import java.util.regex.Pattern
 import kotlin.collections.ArrayList
 
 object MessageEventManager {
-    suspend fun replySpecific(event: MessageEvent) {
-        val message = event.message.serializeToMiraiCode()
+    suspend fun replySpecific(event: MessageEvent): Boolean {
+        val mid = event.message.serializeToMiraiCode()
+
+        // 正则表达式转义
+        val message = mid.replace("-", "_")
+        event.subject.sendMessage(message)
         val file = File(PluginData.path)
         val stream = file.inputStream()
         val content = stream.readBytes().toString(Charset.defaultCharset())
@@ -50,8 +54,10 @@ object MessageEventManager {
                 val base = JSON.parseObject(value, SessionBase::class.java)
                 val index = Random().nextInt(base.values.size)
                 event.subject.sendMessage(base.values[index].deserializeMiraiCode())
+                return true
             }
         }
+        return false
     }
 
     /**
@@ -151,11 +157,11 @@ object MessageEventManager {
      * 只有master能使用
      * 指令：【+-】greet:[空格] 群号
      */
-    suspend fun modifyGreetGroup(event: MessageEvent) {
+    suspend fun modifyGreetGroup(event: MessageEvent): Boolean {
         val qq = event.sender.id
         val content = event.message.contentToString()
         if (qq != PluginData.master || !Pattern.matches("[+-]greet[:：]\\s[\\d]+", content)) {
-            return
+            return false
         }
         val input = content.split("[:：]\\s".toRegex()).toTypedArray()
         val group = input[1].toLong()
@@ -169,6 +175,7 @@ object MessageEventManager {
         } else {
             event.subject.sendMessage("没有找到这个群欸，要不要确定群号后再来试一下呢?")
         }
+        return true
     }
 
 
@@ -177,10 +184,10 @@ object MessageEventManager {
      * 指令：[学习|遗忘] [ 匹配规则 ] 触发内容 回复内容
      *
      */
-    suspend fun operateStudy(event: MessageEvent) {
+    suspend fun operateStudy(event: MessageEvent): Boolean {
         val content = event.message.serializeToMiraiCode()
         if (!Pattern.matches("(学习|遗忘) (精确|模糊|头部|尾部) \\S+ \\S+", content) || event.sender.id != PluginData.master) {
-            return
+            return false
         }
         val input = content.split(" ".toRegex()).toTypedArray()
         val type = input[1]
@@ -202,7 +209,14 @@ object MessageEventManager {
                 regStr = ".*?$key"
             }
         }
+
+        // 正则表达式转义，不然匹配的时候回出问题
+        regStr = regStr.replace("{", "\\{")
+        regStr = regStr.replace("[", "\\[")
+        regStr = regStr.replace("-", "_")
+
         val base = SessionBase(type, key, value, regStr)
+        event.subject.sendMessage("regStr = $regStr")
         val message = try {
             PluginData.operateSpecReply(input[0] == "学习", base)
         } catch (e: Exception) {
@@ -210,6 +224,7 @@ object MessageEventManager {
             buildMessageChain { +PlainText("记忆功能出现了一点点的问题，暂时不能提供服务了，请帮忙联系我的master进行维修") }
         }
         event.subject.sendMessage(message)
+        return true
     }
 
     /**
@@ -217,14 +232,14 @@ object MessageEventManager {
      * 查看目前学会的所有信息
      * 命令：查看记忆
      */
-    suspend fun showStudy(event: MessageEvent) {
+    suspend fun showStudy(event: MessageEvent): Boolean {
         val content = event.message.contentToString()
         if (content != "查看记忆") {
-            return
+            return false
         }
         if (event.sender.id != PluginData.master) {
             event.subject.sendMessage("哼~ 才不会让你知道我学会了多少知识呢，这可是只有master能知道的秘密")
-            return
+            return false
         }
 
         val message = MessageChainBuilder()
@@ -251,16 +266,17 @@ object MessageEventManager {
                 e.printStackTrace()
             }
         }
+        return true
     }
 
     /**
      *
      * 黑名单相关操作
      */
-    suspend fun operateBlacklist(event: MessageEvent) {
+    suspend fun operateBlacklist(event: MessageEvent): Boolean {
         val content = event.message.contentToString()
         if (event.sender.id != PluginData.master || !Pattern.matches("[+-]?黑名单([:：]\\d+)?", content)) {
-            return
+            return false
         }
         val input = content.split("[:：]".toRegex()).toTypedArray()
         val message: MessageChain
@@ -284,5 +300,6 @@ object MessageEventManager {
             }
         }
         event.subject.sendMessage(message)
+        return true
     }
 }

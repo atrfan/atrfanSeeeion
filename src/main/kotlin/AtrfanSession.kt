@@ -30,13 +30,14 @@ object AtrfanSession : KotlinPlugin(
         PluginData.reload()
         logger.info("数据加载完毕")
 
-        if(PluginData.path == "") logger.warning("回复数据来源未指定，请设置相应数据")
+        PluginData.specReply.clear()
+
+        if (PluginData.path == "data.json") logger.warning("回复数据来源未指定，请设置相应数据")
         else logger.info("回复数据文件为${PluginData.path}")
 
         CommandManager.trusted
         CommandManager.register()
         logger.info("指令相关部分已加载完毕")
-
 
 
         // 新人入群欢迎
@@ -54,15 +55,21 @@ object AtrfanSession : KotlinPlugin(
 
         logger.info("群相关会话已开启")
 
+
+        /**
+         *
+         * 优先级一定要正确，不然匹配错误
+         */
+
         GlobalEventChannel.subscribeAlways<MessageEvent> {
             var flag = MessageEventManager.queryGroupProhibit(this)                     // 违禁词查询
             if (!flag) flag = MessageEventManager.deleteGroupProhibit(this)             // 违禁词删除
             if (!flag) flag = MessageEventManager.addGroupProhibit(this)                // 违禁词添加
-            if (!flag) MessageEventManager.replySpecific(this)                          // 特定消息回复
-            MessageEventManager.modifyGreetGroup(this)
-            MessageEventManager.operateStudy(this)                                      // 学习功能
-            MessageEventManager.showStudy(this)                                         // 查看记忆
-            MessageEventManager.operateBlacklist(this)                                  // 黑名单相关操作
+            if (!flag) flag = MessageEventManager.modifyGreetGroup(this)                // 早安晚安问候
+            if (!flag) flag = MessageEventManager.showStudy(this)                                         // 查看记忆
+            if (!flag) flag = MessageEventManager.operateBlacklist(this)                                  // 黑名单相关操作
+            if (!flag) flag = MessageEventManager.operateStudy(this)                                      // 学习功能
+            if (!flag) flag = MessageEventManager.replySpecific(this)                          // 特定消息回复
         }
 
         logger.info("会话监听已准备完毕")
